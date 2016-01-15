@@ -64,10 +64,8 @@ def _django_db_setup(request,
         request.addfinalizer(teardown_database)
 
 
-def _django_db_fixture_helper(transactional,
-                              reset_sequences,
-                              request,
-                              _django_cursor_wrapper):
+def _django_db_fixture_helper(request, _django_cursor_wrapper,
+                              transactional=False, reset_sequences=False):
     if is_django_unittest(request):
         return
 
@@ -108,6 +106,7 @@ def _django_db_fixture_helper(transactional,
 
     if django_case:
         case = django_case(methodName='__init__')
+        case.reset_sequences = reset_sequences
         case._pre_setup()
         request.addfinalizer(case._post_teardown)
 
@@ -180,7 +179,7 @@ def db(request, _django_db_setup, _django_cursor_wrapper):
     if 'transactional_db' in request.funcargnames \
             or 'live_server' in request.funcargnames:
         return request.getfuncargvalue('transactional_db')
-    return _django_db_fixture_helper(False, request, _django_cursor_wrapper)
+    return _django_db_fixture_helper(request, _django_cursor_wrapper)
 
 
 @pytest.fixture(scope='function')
@@ -195,7 +194,8 @@ def transactional_db(request, _django_db_setup, _django_cursor_wrapper):
     database setup will behave as only ``transactional_db`` was
     requested.
     """
-    return _django_db_fixture_helper(True, request, _django_cursor_wrapper)
+    return _django_db_fixture_helper(request, _django_cursor_wrapper,
+                                     transactional=True)
 
 
 @pytest.fixture(scope='function')
@@ -211,7 +211,8 @@ def reset_sequences_db(request, _django_db_setup, _django_cursor_wrapper):
     then the database setup will behave as only ``reset_sequences_db``
     was requested.
     """
-    return _django_db_fixture_helper(True, request, _django_cursor_wrapper)
+    return _django_db_fixture_helper(request, _django_cursor_wrapper,
+                                     transactional=True, reset_sequences=True)
 
 
 @pytest.fixture()
