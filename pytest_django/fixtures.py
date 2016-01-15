@@ -13,10 +13,10 @@ from .db_reuse import (monkey_patch_creation_for_db_reuse,
 from .django_compat import is_django_unittest
 from .lazy_django import get_django_version, skip_if_no_django
 
-__all__ = ['_django_db_setup', 'db', 'transactional_db', 'admin_user',
-           'django_user_model', 'django_username_field',
-           'client', 'admin_client', 'rf', 'settings', 'live_server',
-           '_live_server_helper']
+__all__ = ['_django_db_setup', 'db', 'transactional_db',
+           'reset_sequences_db', 'admin_user', 'django_user_model',
+           'django_username_field', 'client', 'admin_client', 'rf',
+           'settings', 'live_server', '_live_server_helper']
 
 
 # ############### Internal Fixtures ################
@@ -64,7 +64,10 @@ def _django_db_setup(request,
         request.addfinalizer(teardown_database)
 
 
-def _django_db_fixture_helper(transactional, request, _django_cursor_wrapper):
+def _django_db_fixture_helper(transactional,
+                              reset_sequences,
+                              request,
+                              _django_cursor_wrapper):
     if is_django_unittest(request):
         return
 
@@ -191,6 +194,22 @@ def transactional_db(request, _django_db_setup, _django_cursor_wrapper):
     this resource.  If both this and ``db`` are requested then the
     database setup will behave as only ``transactional_db`` was
     requested.
+    """
+    return _django_db_fixture_helper(True, request, _django_cursor_wrapper)
+
+
+@pytest.fixture(scope='function')
+def reset_sequences_db(request, _django_db_setup, _django_cursor_wrapper):
+    """Require a transactional test database with sequence reset support
+
+    This behaves like the ``transactional_db`` fixture, with the addition
+    of enforcing a reset of all auto increment sequence.  If the enquiring
+    test relies on such values (e.g. ids as primary keys), you should
+    request this resource to ensure they are consistent across tests.
+
+    If a combination of this, ``db`` and ``transactional_db`` is requested
+    then the database setup will behave as only ``reset_sequences_db``
+    was requested.
     """
     return _django_db_fixture_helper(True, request, _django_cursor_wrapper)
 
