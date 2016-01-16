@@ -88,6 +88,21 @@ class TestDatabaseFixtures:
 
         assert not noop_transactions()
 
+    def test_reset_sequences_disabled_by_default(self, db):
+        testcase = db
+
+        assert not testcase.reset_sequences
+
+    def test_reset_sequences_disabled(self, transactional_db):
+        testcase = transactional_db
+
+        assert not testcase.reset_sequences
+
+    def test_reset_sequences_enabled(self, reset_sequences_db):
+        testcase = reset_sequences_db
+
+        assert testcase.reset_sequences
+
     @pytest.fixture
     def mydb(self, all_dbs):
         # This fixture must be able to access the database
@@ -170,6 +185,18 @@ class TestDatabaseMarker:
             pytest.skip('transactions required for this test')
 
         assert not noop_transactions()
+
+    @pytest.mark.django_db
+    def test_reset_sequences_disabled(self):
+        marker = self.test_reset_sequences_disabled.django_db
+
+        assert not marker.kwargs
+
+    @pytest.mark.django_db(reset_sequences=True)
+    def test_reset_sequences_enabled(self):
+        marker = self.test_reset_sequences_enabled.django_db
+
+        assert marker.kwargs['reset_sequences']
 
 
 def test_unittest_interaction(django_testdir):
