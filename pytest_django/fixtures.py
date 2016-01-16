@@ -66,6 +66,8 @@ def _django_db_setup(request,
 
 def _django_db_fixture_helper(request, _django_cursor_wrapper,
                               transactional=False, reset_sequences=False):
+    """Setup the django test case and pytest execution context."""
+
     if is_django_unittest(request):
         return
 
@@ -84,6 +86,10 @@ def _django_db_fixture_helper(request, _django_cursor_wrapper,
         if get_version() >= '1.5':
             from django.test import TransactionTestCase as django_case
 
+            if reset_sequences:
+                class ResetSequenceTestCase(django_case):
+                    reset_sequences = True
+                django_case = ResetSequenceTestCase
         else:
             # Django before 1.5 flushed the DB during setUp.
             # Use pytest-django's old behavior with it.
@@ -106,9 +112,9 @@ def _django_db_fixture_helper(request, _django_cursor_wrapper,
 
     if django_case:
         case = django_case(methodName='__init__')
-        case.reset_sequences = reset_sequences
         case._pre_setup()
         request.addfinalizer(case._post_teardown)
+    return django_case
 
 
 def _handle_south():
