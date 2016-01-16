@@ -572,7 +572,6 @@ def validate_django_db(marker):
     """
     def apifun(transaction=False, reset_sequences=False):
         marker.transaction = transaction
-        # TODO maybe print a warnign that transaction=False and reset_sequences=True does not make any sense?
         marker.reset_sequences = transaction and reset_sequences
 
     apifun(*marker.args, **marker.kwargs)
